@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메인 페이지</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        const firebaseConfig = {
+            apiKey: "AIzaSyDUJrHXzQfZ2-FwaZcuMcLu-71gRTVO2b4",
+            authDomain: "the-hoon-studio.firebaseapp.com",
+            projectId: "the-hoon-studio",
+            storageBucket: "the-hoon-studio.firebasestorage.app",
+            messagingSenderId: "857575526697",
+            appId: "1:857575526697:web:43d66881a72f96e5a6e738"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.loadMainSlides = async function() {
+            try {
+                const slidesContainer = document.querySelector('.slides');
+                const mainBottomText = document.querySelector('.main-bottom-text');
+                
+                // 기존 슬라이드 제거
+                slidesContainer.innerHTML = '';
+                mainBottomText.textContent = '';
+                
+                console.log('Firebase에서 프로젝트 로드 시작...');
+                
+                // Firestore에서 모든 프로젝트 불러오기
+                const q = query(collection(db, 'projects'));
+                const querySnapshot = await getDocs(q);
+                const projects = [];
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    console.log('프로젝트 데이터:', data.name, data.mainImage ? '이미지 있음' : '이미지 없음');
+                    projects.push({
+                        name: data.name,
+                        image: data.mainImage || '',
+                        color: data.mainImage && data.mainImage.includes('base64') ? 'white' : 'black'
+                    });
+                });
+                
+                console.log('로드된 프로젝트 수:', projects.length);
+                
+                if (projects.length === 0) {
+                    console.log('프로젝트가 없습니다. 기본 이미지 사용');
+                    // 기본 이미지들 사용
+                    const defaultImages = [
+                        { image: 'image/240312_fch_perspektive1.jpg', color: 'white' },
+                        { image: 'image/241022_ms_vgb_v2.jpg', color: 'white' },
+                        { image: 'image/250522_km22_wz2.jpg', color: 'white' },
+                        { image: 'image/hochauflosend.jpg', color: 'black' }
+                    ];
+                    
+                    defaultImages.forEach((item, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'slide';
+                        div.style.backgroundImage = `url('${item.image}')`;
+                        div.style.color = item.color;
+                        slidesContainer.appendChild(div);
+                    });
+                    
+                    window._mainSlideNames = ['MAI STR.', 'PROJECT 2', 'PROJECT 3', 'PROJECT 4'];
+                } else {
+                    // Firebase에서 가져온 프로젝트들로 슬라이드 생성
+                    projects.forEach((p, i) => {
+                        const div = document.createElement('div');
+                        div.className = 'slide';
+                        div.style.backgroundImage = `url('${p.image}')`;
+                        div.style.color = p.color;
+                        slidesContainer.appendChild(div);
+                    });
+                    
+                    // 슬라이드 텍스트 배열
+                    window._mainSlideNames = projects.map(p => p.name);
+                }
+                
+                // 슬라이드 동작 초기화
+                if (window.initMainSlider) {
+                    window.initMainSlider();
+                }
+                
+                console.log('Firebase 프로젝트 로드 완료');
+                
+            } catch (error) {
+                console.error('Firebase 프로젝트 로드 실패:', error);
+                // 에러 시 기본 이미지 사용
+                const slidesContainer = document.querySelector('.slides');
+                const mainBottomText = document.querySelector('.main-bottom-text');
+                
+                slidesContainer.innerHTML = `
+                    <div class="slide" style="background-image: url('image/240312_fch_perspektive1.jpg'); color: white;"></div>
+                    <div class="slide" style="background-image: url('image/241022_ms_vgb_v2.jpg'); color: white;"></div>
+                    <div class="slide" style="background-image: url('image/250522_km22_wz2.jpg'); color: white;"></div>
+                    <div class="slide" style="background-image: url('image/hochauflosend.jpg'); color: black;"></div>
+                `;
+                
+                window._mainSlideNames = ['MAI STR.', 'PROJECT 2', 'PROJECT 3', 'PROJECT 4'];
+                
+                if (window.initMainSlider) {
+                    window.initMainSlider();
+                }
+            }
+        }
+    </script>
+</head>
+<body class="index-page" style="overflow: hidden;">
+    <!-- 로고 애니메이션 오버레이 -->
+    <div id="logoAnimation" class="logo-animation">
+        <div class="logo-animation-container">
+            <img src="/thehoonstudio/image/logo/Logo.png" alt="로고" class="logo-animation-image">
+            <div class="logo-animation-text">THE HOON STUDIO</div>
+        </div>
+    </div>
+
+    <div class="overlay" onclick="toggleMenu()"></div>
+
+    <div class="header">
+        <a href="/thehoonstudio/index.html" class="logo-link" id="mainLogo">
+            <img src="/thehoonstudio/image/logo/logo.png" alt="로고" class="logo">
+        </a>
+        <div class="navbar-toggle" onclick="toggleMenu()" role="button" tabindex="0" id="menuBurger">
+            <div class="burger-icon-container">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </div>
+        </div>
+    </div>
+    <!-- 기존 위치의 #menuLogoIcon 제거 -->
+
+    <div class="slider">
+      <div class="slides">
+        <!-- Firebase에서 동적으로 로드됩니다 -->
+      </div>
+    </div>
+
+    <div class="main-bottom-text">MAI STR.</div>
+
+    <script>
+    // 로고 애니메이션 실행
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoAnimation = document.getElementById('logoAnimation');
+        const logoImage = document.querySelector('.logo-animation-image');
+        const logoText = document.querySelector('.logo-animation-text');
+        
+        // 초기 상태 설정 - 확실히 숨김
+        if (logoImage) logoImage.style.opacity = '0';
+        if (logoText) logoText.style.opacity = '0';
+        
+        // 페이지 로드 후 약간의 지연을 두고 애니메이션 시작
+        setTimeout(() => {
+            // 로고 이미지 나타남
+            if (logoImage) logoImage.style.opacity = '1';
+            
+            // 로고 이미지 사라짐 (1.5초 후)
+            setTimeout(() => {
+                if (logoImage) logoImage.style.opacity = '0';
+            }, 1500);
+            
+            // 텍스트 나타남 (2초 후)
+            setTimeout(() => {
+                if (logoText) logoText.style.opacity = '1';
+            }, 2000);
+            
+            // 텍스트 사라짐 (3.5초 후)
+            setTimeout(() => {
+                if (logoText) logoText.style.opacity = '0';
+            }, 3500);
+            
+            // 애니메이션 완료 후 오버레이 제거 (4초 후)
+            setTimeout(() => {
+                if (logoAnimation) {
+                    logoAnimation.style.opacity = '0';
+                    setTimeout(() => {
+                        if (logoAnimation) logoAnimation.style.display = 'none';
+                    }, 500);
+                }
+            }, 4000);
+        }, 100);
+    });
+
+    // Firestore에서 슬라이드 불러온 후 동작
+    window.initMainSlider = function() {
+        const slidesContainer = document.querySelector('.slides');
+        const slides = Array.from(slidesContainer.children);
+        const totalSlides = slides.length;
+        const mainBottomText = document.querySelector('.main-bottom-text');
+        const projectNames = window._mainSlideNames || [];
+
+        console.log('mainBottomText found:', mainBottomText); // 디버깅
+
+        // 각 슬라이드별 위치 설정 (margin-right 값)
+        const margins = [
+            '0px',     // 첫 번째: 오른쪽에 붙음
+            '300px',   // 두 번째: 한 칸 왼쪽 (60px * 5)
+            '600px',   // 세 번째: 두 칸 왼쪽 (120px * 5)
+            '1100px'   // 네 번째: 더 왼쪽에 붙게 (기존 900px → 1100px)
+        ];
+
+        // 각 슬라이드별 선 길이 설정 (calc 값)
+        const lineWidths = [
+            'calc(100vw + 500px)',  // 첫 번째: 화면 밖까지 (기존 + 500px)
+            'calc(100vw + 400px)',  // 두 번째: 조금 짧아짐
+            'calc(100vw + 300px)',  // 세 번째: 더 짧아짐
+            'calc(100vw + 200px)'   // 마지막: 가장 짧음
+        ];
+
+        // 앞뒤로 클론 추가
+        const firstClone = slides[0].cloneNode(true);
+        const lastClone = slides[totalSlides - 1].cloneNode(true);
+        slidesContainer.appendChild(firstClone);
+        slidesContainer.insertBefore(lastClone, slidesContainer.firstChild);
+
+        let currentIndex = 1; // 클론 때문에 1부터 시작
+        let isTransitioning = false;
+
+        // 슬라이드 컨테이너 너비 조정
+        slidesContainer.style.width = `${(totalSlides + 2) * 100}vw`;
+        slidesContainer.style.transition = 'none';
+        slidesContainer.style.transform = `translateX(-${currentIndex * 100}vw)`;
+
+        // 초기 텍스트 설정
+        updateProjectName(currentIndex - 1);
+
+        setTimeout(() => {
+            slidesContainer.style.transition = 'transform 0.5s ease';
+        }, 20);
+
+        function updateProjectName(slideIndex) {
+            const actualIndex = slideIndex % totalSlides;
+            mainBottomText.textContent = projectNames[actualIndex];
+            // 텍스트 위치를 1,2,3,4번(0,1,2,3)으로 반복
+            const posIndex = actualIndex % margins.length;
+            mainBottomText.style.cssText += `; margin-right: ${margins[posIndex]} !important;`;
+            // 선 길이 설정
+            document.documentElement.style.setProperty('--line-width', lineWidths[posIndex], 'important');
+            // 첫 번째 슬라이드(MAI STR.)일 때 오른쪽 라인 숨기기
+            if (posIndex === 0) {
+                mainBottomText.style.setProperty('--after-display', 'none', 'important');
+            } else {
+                mainBottomText.style.setProperty('--after-display', 'block', 'important');
+            }
+            mainBottomText.offsetHeight;
+        }
+
+        function goToSlide(index) {
+            slidesContainer.style.transform = `translateX(-${index * 100}vw)`;
+            currentIndex = index;
+            updateProjectName(index - 1);
+        }
+
+        function showNextSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            goToSlide(currentIndex + 1);
+
+            setTimeout(() => {
+                if (currentIndex === totalSlides + 1) {
+                    // 마지막 클론 → 진짜 첫 슬라이드로 순간 이동
+                    slidesContainer.style.transition = 'none';
+                    goToSlide(1);
+                    setTimeout(() => {
+                        slidesContainer.style.transition = 'transform 0.5s ease';
+                        isTransitioning = false;
+                    }, 20);
+                } else {
+                    isTransitioning = false;
+                }
+            }, 500);
+        }
+
+        setInterval(showNextSlide, 3000);
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('홈페이지 로드 시작');
+        
+        // Firebase에서 프로젝트 로드
+        if (window.loadMainSlides) {
+            console.log('loadMainSlides 함수 호출');
+            window.loadMainSlides();
+        } else if (window.initMainSlider) {
+            window.initMainSlider();
+        }
+    });
+    </script>
+
+    <div class="menu-overlay-ex" onclick="closeMenuByBg(event)">
+        <div class="menu-list" id="menuList">
+            <img src="image/logo/Logo.png" alt="메뉴 닫기 로고" class="menu-active-logo-icon" id="menuLogoIcon" style="display:none;cursor:pointer;">
+            <div class="menu-link-wrap">
+                <a href="/thehoonstudio/about.html" class="menu-link" data-menu="ABOUT">ABOUT</a>
+                <span class="menu-underline"></span>
+            </div>
+            <div class="menu-link-wrap">
+                <a href="/thehoonstudio/projects.html" class="menu-link" data-menu="PROJECTS">PROJECTS</a>
+                <span class="menu-underline"></span>
+            </div>
+            <div class="menu-link-wrap">
+                <a href="/thehoonstudio/contact.html" class="menu-link" data-menu="CONTACT">CONTACT</a>
+                <span class="menu-underline"></span>
+            </div>
+            <div class="menu-social-wrap">
+                <a href="https://www.instagram.com/" target="_blank" class="menu-social-link">INSTAGRAM</a>
+                <span class="menu-social-divider">|</span>
+                <a href="https://www.linkedin.com/" target="_blank" class="menu-social-link">LINKEDIN</a>
+            </div>
+        </div>
+    </div>
+
+    </script>
+
+    <script>
+    function toggleMenu() {
+        document.body.classList.toggle('menu-active');
+        document.querySelector('.menu-overlay-ex').classList.toggle('active');
+        const burger = document.querySelector('.burger-icon-container');
+        const logoIcon = document.getElementById('menuLogoIcon');
+        if(document.body.classList.contains('menu-active')) {
+            burger.classList.add('hidden');
+            logoIcon.style.display = 'block';
+            logoIcon.src = 'image/logo/Logo2.png'; // 흰색 로고로 지정
+            logoIcon.style.filter = '';
+            logoIcon.style.background = '#ccc'; // 회색 원형 배경
+            logoIcon.style.borderRadius = '50%';
+            logoIcon.style.position = 'fixed';
+            logoIcon.style.top = '106px';
+            logoIcon.style.right = '38px';
+            logoIcon.style.width = '35.2px';
+            logoIcon.style.height = '35.2px';
+            logoIcon.style.padding = '0';
+            logoIcon.style.objectFit = 'contain';
+            logoIcon.style.zIndex = '2000';
+            logoIcon.onclick = function(e) {
+                e.stopPropagation();
+                toggleMenu();
+            };
+        } else {
+            burger.classList.remove('hidden');
+            logoIcon.style.display = 'none';
+                            logoIcon.src = 'image/logo/Logo.png';
+            logoIcon.style.filter = '';
+            logoIcon.onclick = null;
+        }
+    }
+
+    function closeMenuByBg(e) {
+        if (e.target.classList.contains('menu-overlay-ex')) {
+            toggleMenu();
+        }
+    }
+    </script>
+
+</body>
+</html>
